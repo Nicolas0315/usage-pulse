@@ -10,6 +10,7 @@ from .analysis.roi import compute_roi, format_roi_table
 from .display.notify import Notifier
 from .handshake import STATE_FILE, write_state
 from .providers.ccusage import CcusageProvider
+from .providers.codexbar import CodexbarProvider
 
 
 @click.group()
@@ -104,11 +105,19 @@ def sync(threshold):
 @click.option("--threshold", default=50.0, envvar="USAGE_PULSE_THRESHOLD")
 def summary(threshold):
     """Print today's usage summary."""
-    provider = CcusageProvider()
-    data = provider.fetch_today()
+    ccusage = CcusageProvider()
+    data = ccusage.fetch_today()
     if data is None:
         click.echo("Error: could not fetch usage data", err=True)
         sys.exit(1)
+
+    # Enrich with real-time rate windows from CodexBar (TTY-free per-provider calls)
+    cb = CodexbarProvider()
+    if cb.available:
+        windows = cb.fetch_rate_windows()
+        data = cb.enrich_usage_data(data, windows)
+    else:
+        windows = {}
 
     advisor = ModelAdvisor()
     rec = advisor.recommend(data, threshold)
@@ -123,6 +132,18 @@ def summary(threshold):
     click.echo(f"  Cache read:   {data.cache_read_tokens:,}")
     click.echo(f"  5min rate:    {data.primary_rate_pct:.1f}%")
     click.echo(f"  Weekly rate:  {data.weekly_rate_pct:.1f}%")
+
+    if windows:
+        click.echo()
+        click.echo("  Rate windows (CodexBar):")
+        for prov, info in windows.items():
+            click.echo(
+                f"    {info['label']} {prov}: "
+                f"primary={info['primary_pct']:.1f}% "
+                f"secondary={info['secondary_pct']:.1f}%"
+                + (f"  [{info['primary_reset_desc']}]" if info.get("primary_reset_desc") else "")
+            )
+
     urgency_emoji = {"ok": "✅", "caution": "⚠️", "warning": "🟠", "critical": "🔴"}
     click.echo(f"\n  Recommended:  {urgency_emoji.get(rec.urgency, '')} {rec.model}")
     click.echo(f"  Reason:       {rec.reason}")
