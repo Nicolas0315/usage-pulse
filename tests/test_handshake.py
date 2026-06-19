@@ -44,7 +44,7 @@ def test_write_and_read_state():
 
 def test_state_has_required_keys():
     write_state(_make_data(), ModelAdvisor().recommend(_make_data()))
-    state = json.loads(STATE_FILE.read_text())
+    state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     assert "updated_at" in state
     assert "today" in state
     assert "rate_windows" in state
