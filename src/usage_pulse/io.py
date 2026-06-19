@@ -1,6 +1,7 @@
 """Small filesystem helpers shared by background-safe writers."""
 
 import os
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -11,7 +12,14 @@ def write_text_atomic(path: Path, text: str, *, encoding: str = "utf-8") -> None
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid4().hex}.tmp")
     try:
         tmp.write_text(text, encoding=encoding)
-        tmp.replace(path)
+        for attempt in range(6):
+            try:
+                tmp.replace(path)
+                break
+            except PermissionError:
+                if attempt == 5:
+                    raise
+                time.sleep(0.02)
     finally:
         try:
             tmp.unlink()
