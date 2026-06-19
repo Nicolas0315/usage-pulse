@@ -3,7 +3,8 @@
 import json
 import shutil
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from typing import Any
 
 from .base import ModelBreakdown, UsageData
 
@@ -47,17 +48,84 @@ class CcusageProvider:
     """Fetch usage data via ccusage CLI (cross-platform, background-safe)."""
 
     def __init__(self, bunx_path: str | None = None, timeout: int = 30):
-        self.bunx = bunx_path or shutil.which("bunx") or "bunx"
+        if bunx_path is not None:
+            self.command = [bunx_path, "ccusage"]
+        elif ccusage := shutil.which("ccusage"):
+            self.command = [ccusage]
+        else:
+            self.command = [shutil.which("bunx") or "bunx", "ccusage"]
         self.timeout = timeout
+
+    @staticmethod
+    def _as_float(value: Any) -> float:
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    @staticmethod
+    def _as_int(value: Any) -> int:
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    @staticmethod
+    def _entry_date(entry: dict[str, Any]) -> str:
+        return str(entry.get("period") or entry.get("date") or "")
+
+    def _select_day(self, daily: list[dict[str, Any]]) -> dict[str, Any] | None:
+        if not daily:
+            return None
+
+        today = date.today().isoformat()
+        for entry in daily:
+            if self._entry_date(entry) == today:
+                return entry
+
+        dated = [entry for entry in daily if self._entry_date(entry)]
+        if dated:
+            return max(dated, key=self._entry_date)
+        return daily[-1]
+
+    def _parse_day(self, entry: dict[str, Any]) -> UsageData:
+        breakdowns = [
+            ModelBreakdown(
+                model_name=str(m.get("modelName", "unknown")),
+                cost_usd=self._as_float(m.get("cost")),
+                input_tokens=self._as_int(m.get("inputTokens")),
+                output_tokens=self._as_int(m.get("outputTokens")),
+                cache_read_tokens=self._as_int(m.get("cacheReadTokens")),
+                cache_creation_tokens=self._as_int(m.get("cacheCreationTokens")),
+            )
+            for m in entry.get("modelBreakdowns", [])
+            if isinstance(m, dict)
+        ]
+
+        total_tokens = entry.get("totalTokens")
+        return UsageData(
+            date=self._entry_date(entry) or datetime.now(UTC).strftime("%Y-%m-%d"),
+            cost_usd=self._as_float(entry.get("totalCost", entry.get("cost"))),
+            input_tokens=self._as_int(entry.get("inputTokens")),
+            output_tokens=self._as_int(entry.get("outputTokens")),
+            cache_read_tokens=self._as_int(entry.get("cacheReadTokens")),
+            cache_creation_tokens=self._as_int(entry.get("cacheCreationTokens")),
+            total_tokens_reported=self._as_int(total_tokens) if total_tokens is not None else None,
+            model_breakdowns=breakdowns,
+            source="ccusage",
+            fetched_at=datetime.now(UTC),
+        )
 
     def fetch_today(self) -> UsageData | None:
         try:
             result = subprocess.run(
-                [self.bunx, "ccusage", "daily", "--json"],
+                [*self.command, "daily", "--json"],
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
             )
+            if result.returncode != 0:
+                return None
             raw = result.stdout.strip()
             if not raw:
                 return None
@@ -69,30 +137,8 @@ class CcusageProvider:
         if not daily:
             return None
 
-        today = daily[0]
-        breakdowns = [
-            ModelBreakdown(
-                model_name=m.get("modelName", "unknown"),
-                cost_usd=float(m.get("cost", 0)),
-                input_tokens=int(m.get("inputTokens", 0)),
-                output_tokens=int(m.get("outputTokens", 0)),
-                cache_read_tokens=int(m.get("cacheReadTokens", 0)),
-                cache_creation_tokens=int(m.get("cacheCreationTokens", 0)),
-            )
-            for m in today.get("modelBreakdowns", [])
-        ]
-
-        return UsageData(
-            date=today.get("date", datetime.now(UTC).strftime("%Y-%m-%d")),
-            cost_usd=float(today.get("cost", 0)),
-            input_tokens=int(today.get("inputTokens", 0)),
-            output_tokens=int(today.get("outputTokens", 0)),
-            cache_read_tokens=int(today.get("cacheReadTokens", 0)),
-            cache_creation_tokens=int(today.get("cacheCreationTokens", 0)),
-            model_breakdowns=breakdowns,
-            source="ccusage",
-            fetched_at=datetime.now(UTC),
-        )
+        today = self._select_day([entry for entry in daily if isinstance(entry, dict)])
+        return self._parse_day(today) if today is not None else None
 
     def format_tmux(self, data: UsageData, cost_threshold: float = 50.0) -> str:
         """Return tmux-colored status string."""

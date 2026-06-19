@@ -15,7 +15,12 @@ class ModelBreakdown:
 
     @property
     def total_tokens(self) -> int:
-        return self.input_tokens + self.output_tokens
+        return (
+            self.input_tokens
+            + self.output_tokens
+            + self.cache_read_tokens
+            + self.cache_creation_tokens
+        )
 
     @property
     def cost_per_1k_output(self) -> float:
@@ -48,6 +53,7 @@ class UsageData:
     output_tokens: int
     cache_read_tokens: int = 0
     cache_creation_tokens: int = 0
+    total_tokens_reported: int | None = None
     model_breakdowns: list[ModelBreakdown] = field(default_factory=list)
     rate_windows: dict[str, RateWindow] = field(default_factory=dict)
     source: str = "unknown"
@@ -55,7 +61,14 @@ class UsageData:
 
     @property
     def total_tokens(self) -> int:
-        return self.input_tokens + self.output_tokens
+        if self.total_tokens_reported is not None:
+            return self.total_tokens_reported
+        return (
+            self.input_tokens
+            + self.output_tokens
+            + self.cache_read_tokens
+            + self.cache_creation_tokens
+        )
 
     @property
     def top_models(self) -> list[ModelBreakdown]:

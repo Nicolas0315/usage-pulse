@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from src.usage_pulse.analysis.advisor import ModelAdvisor
-from src.usage_pulse.handshake import STATE_FILE, read_state, write_state
-from src.usage_pulse.providers.base import RateWindow, UsageData
+from usage_pulse.analysis.advisor import ModelAdvisor
+from usage_pulse.handshake import STATE_FILE, read_state, write_state
+from usage_pulse.providers.base import RateWindow, UsageData
 
 
 @pytest.fixture(autouse=True)

@@ -1,7 +1,12 @@
 """usage-pulse CLI entry point."""
 
+import json
 import os
+import platform
+import shutil
 import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
 import click
 
@@ -11,6 +16,54 @@ from .display.notify import Notifier
 from .handshake import STATE_FILE, write_state
 from .providers.ccusage import CcusageProvider
 from .providers.codexbar import CodexbarProvider
+
+
+def _usage_payload(data, rec, windows=None) -> dict:
+    return {
+        "date": data.date,
+        "source": data.source,
+        "fetched_at": data.fetched_at.isoformat() if data.fetched_at else None,
+        "today": {
+            "cost_usd": round(data.cost_usd, 6),
+            "tokens": data.total_tokens,
+            "input_tokens": data.input_tokens,
+            "output_tokens": data.output_tokens,
+            "cache_read_tokens": data.cache_read_tokens,
+            "cache_creation_tokens": data.cache_creation_tokens,
+            "top_models": [
+                {
+                    "model": m.model_name,
+                    "cost_usd": round(m.cost_usd, 6),
+                    "tokens": m.total_tokens,
+                    "input_tokens": m.input_tokens,
+                    "output_tokens": m.output_tokens,
+                    "cache_read_tokens": m.cache_read_tokens,
+                    "cache_creation_tokens": m.cache_creation_tokens,
+                }
+                for m in data.top_models[:5]
+                if m.cost_usd > 0
+            ],
+        },
+        "rate_windows": {
+            "claude_5min_pct": round(data.primary_rate_pct, 1),
+            "claude_weekly_pct": round(data.weekly_rate_pct, 1),
+            "providers": windows or {},
+        },
+        "recommendation": {
+            "model": rec.model,
+            "reason": rec.reason,
+            "urgency": rec.urgency,
+        },
+    }
+
+
+def _echo_json(payload: dict) -> None:
+    click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _cache_paths() -> tuple[Path, Path]:
+    cache_dir = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "usage-pulse"
+    return cache_dir / "statusline", cache_dir / "statusline.time"
 
 
 @click.group()
@@ -31,11 +84,9 @@ def main():
 def statusline(threshold, no_cache):
     """Output tmux status-right string (cached, non-blocking)."""
     import time
-    from pathlib import Path
 
-    cache_dir = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "usage-pulse"
-    cache_file = cache_dir / "statusline"
-    cache_time_file = cache_dir / "statusline.time"
+    cache_file, cache_time_file = _cache_paths()
+    cache_dir = cache_file.parent
     ttl = int(os.environ.get("USAGE_PULSE_CACHE_TTL", "60"))
 
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -74,7 +125,9 @@ def statusline(threshold, no_cache):
 
 @main.command()
 @click.option("--threshold", default=50.0, envvar="USAGE_PULSE_THRESHOLD")
-def sync(threshold):
+@click.option("--json", "json_output", is_flag=True, help="Print machine-readable JSON")
+@click.option("--quiet", is_flag=True, help="Suppress human-readable output")
+def sync(threshold, json_output, quiet):
     """Update agent handshake state file with current usage."""
     provider = CcusageProvider()
     data = provider.fetch_today()
@@ -96,6 +149,12 @@ def sync(threshold):
     else:
         notifier.reset("cost-threshold")
 
+    if json_output:
+        _echo_json(_usage_payload(data, rec))
+        return
+    if quiet:
+        return
+
     click.echo(f"Synced: ${data.cost_usd:.2f} / {data.total_tokens // 1000}K tokens")
     click.echo(f"Recommend: {rec.model} — {rec.reason}")
     click.echo(f"State: {STATE_FILE}")
@@ -103,7 +162,8 @@ def sync(threshold):
 
 @main.command()
 @click.option("--threshold", default=50.0, envvar="USAGE_PULSE_THRESHOLD")
-def summary(threshold):
+@click.option("--json", "json_output", is_flag=True, help="Print machine-readable JSON")
+def summary(threshold, json_output):
     """Print today's usage summary."""
     ccusage = CcusageProvider()
     data = ccusage.fetch_today()
@@ -121,6 +181,10 @@ def summary(threshold):
 
     advisor = ModelAdvisor()
     rec = advisor.recommend(data, threshold)
+
+    if json_output:
+        _echo_json(_usage_payload(data, rec, windows))
+        return
 
     click.echo(f"\n{'=' * 50}")
     click.echo(f"  usage-pulse  —  {data.date}")
@@ -148,6 +212,82 @@ def summary(threshold):
     click.echo(f"\n  Recommended:  {urgency_emoji.get(rec.urgency, '')} {rec.model}")
     click.echo(f"  Reason:       {rec.reason}")
     click.echo(f"{'=' * 50}\n")
+
+
+@main.command()
+@click.option("--json", "json_output", is_flag=True, help="Print machine-readable JSON")
+@click.option("--skip-live", is_flag=True, help="Skip live provider fetch checks")
+def doctor(json_output, skip_live):
+    """Diagnose local installation, providers, cache, and state paths."""
+    checks = []
+
+    def add(name: str, status: str, detail: str, **extra) -> None:
+        checks.append({"name": name, "status": status, "detail": detail, **extra})
+
+    add(
+        "python",
+        "ok" if sys.version_info >= (3, 11) else "fail",
+        platform.python_version(),
+    )
+
+    ccusage = CcusageProvider()
+    ccusage_exe = ccusage.command[0]
+    add(
+        "ccusage_command",
+        "ok" if shutil.which(ccusage_exe) or Path(ccusage_exe).exists() else "fail",
+        " ".join(ccusage.command),
+    )
+
+    codexbar = CodexbarProvider()
+    add(
+        "codexbar",
+        "ok" if codexbar.available else "warn",
+        shutil.which("codexbar") or "not available",
+        timeout_seconds=codexbar.timeout,
+    )
+
+    cache_file, cache_time_file = _cache_paths()
+    add("cache_path", "ok", str(cache_file), exists=cache_file.exists())
+    add("cache_time_path", "ok", str(cache_time_file), exists=cache_time_file.exists())
+    add("state_path", "ok", str(STATE_FILE), exists=STATE_FILE.exists())
+
+    if skip_live:
+        add("ccusage_live", "warn", "skipped")
+    else:
+        started = datetime.now(UTC)
+        data = ccusage.fetch_today()
+        elapsed_ms = int((datetime.now(UTC) - started).total_seconds() * 1000)
+        if data is None:
+            add("ccusage_live", "fail", "fetch returned no data", elapsed_ms=elapsed_ms)
+        else:
+            add(
+                "ccusage_live",
+                "ok",
+                f"{data.date} ${data.cost_usd:.2f} / {data.total_tokens:,} tokens",
+                elapsed_ms=elapsed_ms,
+            )
+
+    status = "fail" if any(c["status"] == "fail" for c in checks) else "ok"
+    payload = {
+        "status": status,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "platform": {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+        },
+        "checks": checks,
+    }
+
+    if json_output:
+        _echo_json(payload)
+    else:
+        click.echo(f"usage-pulse doctor: {status}")
+        for check in checks:
+            click.echo(f"  {check['status']:4} {check['name']}: {check['detail']}")
+
+    if status == "fail":
+        sys.exit(1)
 
 
 @main.command()

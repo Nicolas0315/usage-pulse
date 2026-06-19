@@ -11,7 +11,10 @@ uv sync --dev
 ## テスト
 
 ```bash
-python -m pytest tests/ -v
+uv run pytest tests/ -v
+uv run ruff check .
+uv run mypy src tests
+uv build --out-dir /tmp/usage-pulse-build-check
 ```
 
 ## ブランチ戦略

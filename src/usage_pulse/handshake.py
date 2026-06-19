@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .analysis.advisor import Recommendation
+from .io import write_text_atomic
 from .providers.base import UsageData
 
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "usage-pulse"
@@ -35,7 +36,7 @@ def write_state(data: UsageData, rec: Recommendation) -> None:
             "urgency": rec.urgency,
         },
     }
-    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_text_atomic(STATE_FILE, json.dumps(state, ensure_ascii=False, indent=2))
 
 
 def read_state() -> dict | None:

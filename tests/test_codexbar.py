@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.usage_pulse.providers.codexbar import CodexbarProvider
+from usage_pulse.providers.codexbar import CodexbarProvider
 
 
 def _mock_run(stdout: str, returncode: int = 0):
@@ -64,6 +64,16 @@ def test_fetch_one_returns_none_on_empty(provider):
     assert item is None
 
 
+def test_default_timeout_can_be_overridden(monkeypatch):
+    monkeypatch.setenv("USAGE_PULSE_CODEXBAR_TIMEOUT", "2")
+    assert CodexbarProvider().timeout == 2
+
+
+def test_default_timeout_ignores_invalid_env(monkeypatch):
+    monkeypatch.setenv("USAGE_PULSE_CODEXBAR_TIMEOUT", "not-a-number")
+    assert CodexbarProvider().timeout == 4
+
+
 def test_fetch_rate_windows_aggregates(provider):
     def fake_run(cmd, **kwargs):
         provider_arg = cmd[cmd.index("--provider") + 1]
@@ -97,7 +107,7 @@ def test_format_tmux_colors(provider):
 
 
 def test_enrich_usage_data(provider):
-    from src.usage_pulse.providers.base import UsageData
+    from usage_pulse.providers.base import UsageData
 
     data = UsageData(date="2026-06-19", cost_usd=5.0, input_tokens=10000, output_tokens=2000)
     windows = {
