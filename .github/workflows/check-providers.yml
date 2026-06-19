@@ -1,0 +1,21 @@
+name: Weekly provider update check
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # 毎週月曜 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+      - name: Check ccusage latest
+        run: |
+          LATEST=$(bun x npm view ccusage version)
+          PINNED=$(python3 -c "import json; d=json.load(open('providers/VERSION_PINS.json')); print(d['ccusage']['version'])")
+          echo "ccusage: pinned=$PINNED, latest=$LATEST"
+          if [ "$PINNED" != "$LATEST" ]; then
+            echo "::warning::ccusage update available: $PINNED -> $LATEST"
+          fi
