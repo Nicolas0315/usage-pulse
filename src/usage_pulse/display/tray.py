@@ -8,7 +8,6 @@ from ..analysis.advisor import ModelAdvisor
 from ..analysis.roi import compute_roi, format_roi_table
 from ..handshake import write_state
 from ..providers.ccusage import CcusageProvider
-from ..providers.codexbar import CodexbarProvider
 from .notify import Notifier
 
 
@@ -37,7 +36,6 @@ class TrayApp:
         self.threshold = cost_threshold
         self.poll_interval = poll_interval
         self._ccusage = CcusageProvider()
-        self._codexbar = CodexbarProvider()
         self._advisor = ModelAdvisor()
         self._notifier = Notifier()
         self._data = None

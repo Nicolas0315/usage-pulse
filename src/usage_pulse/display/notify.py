@@ -34,15 +34,25 @@ class Notifier:
         )
         os.makedirs(self._state_dir, exist_ok=True)
 
+    @staticmethod
+    def _esc_applescript(s: str) -> str:
+        return s.replace("\\", "\\\\").replace('"', '\\"')
+
+    @staticmethod
+    def _esc_ps_single(s: str) -> str:
+        return s.replace("'", "''")
+
     def send(self, title: str, message: str) -> None:
         try:
             match self._os:
                 case "mac":
+                    t = self._esc_applescript(title)
+                    m = self._esc_applescript(message)
                     subprocess.run(
                         [
                             "osascript",
                             "-e",
-                            f'display notification "{message}" with title "{title}"',
+                            f'display notification "{m}" with title "{t}"',
                         ],
                         capture_output=True,
                         timeout=5,
@@ -54,13 +64,15 @@ class Notifier:
                         timeout=5,
                     )
                 case "wsl":
+                    t = self._esc_ps_single(title)
+                    m = self._esc_ps_single(message)
                     ps_cmd = (
                         "[Windows.UI.Notifications.ToastNotificationManager, "
                         "Windows.UI.Notifications, ContentType=WindowsRuntime] | Out-Null; "
                         "$xml = [Windows.UI.Notifications.ToastNotificationManager]::"
                         "GetTemplateContent('ToastText02'); "
-                        f"$xml.GetElementsByTagName('text')[0].InnerText = '{title}'; "
-                        f"$xml.GetElementsByTagName('text')[1].InnerText = '{message}'; "
+                        f"$xml.GetElementsByTagName('text')[0].InnerText = '{t}'; "
+                        f"$xml.GetElementsByTagName('text')[1].InnerText = '{m}'; "
                         "[Windows.UI.Notifications.ToastNotificationManager]::"
                         "CreateToastNotifier('usage-pulse').Show("
                         "[Windows.UI.Notifications.ToastNotification]::new($xml))"
@@ -71,12 +83,14 @@ class Notifier:
                         timeout=10,
                     )
                 case "windows":
+                    t = self._esc_ps_single(title)
+                    m = self._esc_ps_single(message)
                     ps_cmd = (
                         "Add-Type -AssemblyName System.Windows.Forms; "
                         "$n = New-Object System.Windows.Forms.NotifyIcon; "
                         "$n.Icon = [System.Drawing.SystemIcons]::Information; "
                         "$n.Visible = $true; "
-                        f"$n.ShowBalloonTip(5000, '{title}', '{message}', "
+                        f"$n.ShowBalloonTip(5000, '{t}', '{m}', "
                         "[System.Windows.Forms.ToolTipIcon]::Info)"
                     )
                     subprocess.run(

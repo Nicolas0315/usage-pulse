@@ -7,20 +7,35 @@ from datetime import UTC, datetime
 
 from .base import ModelBreakdown, UsageData
 
-# Short display names for known models
+# Short display names for known models (update when adding providers)
 MODEL_SHORT = {
+    # Claude
     "claude-opus-4-8": "Op4.8",
     "claude-sonnet-4-6": "So4.6",
     "claude-haiku-4-5": "Ha4.5",
     "claude-fable-5": "Fb5",
+    "claude-3.5-sonnet": "S3.5",
+    # OpenAI / Codex
     "gpt-5.5": "GP5.5",
     "gpt-4o": "GP4o",
     "gpt-4o-mini": "4oMini",
+    "gpt-4.1": "GP4.1",
     "o3": "O3",
     "o4-mini": "O4m",
     "codex-auto-review": "CXRev",
+    # Gemini
     "gemini-2.5-pro": "Gm2.5",
+    "gemini-2.5-flash": "Gm2.5F",
     "gemini-2.0-flash": "Gm2F",
+    # Qwen (Amp / OpenCode / Qwen provider)
+    "qwen2.5-coder-32b-instruct": "Qw2.5",
+    "qwen-plus": "QwPls",
+    "qwen-max": "QwMax",
+    # Kimi / Moonshot
+    "kimi-k2": "KimiK2",
+    "moonshot-v1-8k": "Moon8k",
+    # Hermes (Nous Research via various providers)
+    "hermes-3-llama-3.1-70b": "Hrm70",
 }
 
 

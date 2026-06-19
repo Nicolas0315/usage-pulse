@@ -1,15 +1,17 @@
 ---
-name: Provider update
-about: ccusage/codexbar のスキーマ変更・バージョンアップ報告
-labels: provider-update
+name: Provider schema update
+about: ccusage or codexbar changed their output format
+labels: provider
 ---
 
-**プロバイダー**: ccusage / codexbar / other
+## Provider
+- [ ] ccusage
+- [ ] codexbar
+- [ ] other
 
-**変更内容**
+## Version change
+<!-- From X.Y.Z to A.B.C -->
 
-**影響するファイル**
-- [ ] `providers/VERSION_PINS.json`
-- [ ] `src/usage_pulse/providers/*.py`
+## What changed in the output format
 
-**確認バージョン**
+## Affected fields in usage-pulse

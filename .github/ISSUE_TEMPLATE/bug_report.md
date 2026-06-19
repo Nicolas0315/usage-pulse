@@ -1,21 +1,19 @@
 ---
 name: Bug report
-about: バグ報告
+about: Something is broken
 labels: bug
 ---
 
-**環境**
-- OS: 
-- usage-pulse version: 
-- ccusage version: 
-- codexbar version (Mac only): 
+## Describe the bug
 
-**再現手順**
+## Environment
+- OS:
+- Python version:
+- usage-pulse version: (`usage-pulse --version`)
+- ccusage version: (`bunx ccusage --version`)
 
-**期待動作**
+## Steps to reproduce
 
-**実際の動作**
+## Expected behavior
 
-**ログ**
-```
-```
+## Actual behavior / error output
