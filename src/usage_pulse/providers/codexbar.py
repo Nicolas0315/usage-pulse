@@ -16,9 +16,11 @@ Confirmed background-safe providers (tested 2026-06-19):
 """
 
 import json
+import os
 import platform
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 from .base import RateWindow, UsageData
 
@@ -33,6 +35,13 @@ _PROVIDERS: list[tuple[str, str, list[str]]] = [
 ]
 
 
+def _default_timeout() -> int:
+    try:
+        return max(1, int(os.environ.get("USAGE_PULSE_CODEXBAR_TIMEOUT", "4")))
+    except ValueError:
+        return 4
+
+
 class CodexbarProvider:
     """Fetch rate-window data from CodexBar CLI without TTY.
 
@@ -40,8 +49,8 @@ class CodexbarProvider:
     to avoid the codex-provider TTY hang. Works on macOS; returns {} elsewhere.
     """
 
-    def __init__(self, timeout: int = 12):
-        self.timeout = timeout
+    def __init__(self, timeout: int | None = None):
+        self.timeout = timeout or _default_timeout()
         self._binary: str = shutil.which("codexbar") or "codexbar"
 
     @property
@@ -77,8 +86,21 @@ class CodexbarProvider:
             return {}
 
         out = {}
-        for provider, label, extra in _PROVIDERS:
-            item = self._fetch_one(provider, extra)
+        with ThreadPoolExecutor(max_workers=len(_PROVIDERS)) as pool:
+            futures = {
+                provider: pool.submit(self._fetch_one, provider, extra)
+                for provider, _label, extra in _PROVIDERS
+            }
+
+            ordered_items = []
+            for provider, label, _extra in _PROVIDERS:
+                try:
+                    item = futures[provider].result()
+                except Exception:
+                    item = None
+                ordered_items.append((provider, label, item))
+
+        for provider, label, item in ordered_items:
             if item is None:
                 continue
             usage = item.get("usage", {})

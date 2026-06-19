@@ -2,14 +2,15 @@
   "_comment": "Confirmed-working versions. Run scripts/check-provider-updates.sh to check for updates.",
   "ccusage": {
     "version": "20.0.11",
-    "confirmed_date": "2026-06-19",
-    "schema_notes": "daily --json: {daily: [{date, cost, inputTokens, outputTokens, modelBreakdowns: [{modelName, cost, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens}]}]}"
+    "latest_seen": "20.0.14",
+    "confirmed_date": "2026-06-20",
+    "schema_notes": "daily --json: {daily: [{period, totalCost, totalTokens, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens, modelBreakdowns: [{modelName, cost, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens}]}]}"
   },
   "codexbar": {
     "version": "0.34.0",
-    "confirmed_date": "2026-06-19",
-    "schema_notes": "usage --json: [{provider, source, usage: {primary: {usedPercent, windowMinutes, resetsAt}, secondary: {...}}}]. Exits with code 3 when any provider has error but still outputs valid JSON for others. Hangs without TTY (issue #1329).",
-    "workaround": "Use `script -q /dev/null codexbar usage --json` on Mac to allocate pseudo-TTY"
+    "latest_seen": "0.36.1",
+    "confirmed_date": "2026-06-20",
+    "schema_notes": "usage --provider <name> --json: [{provider, source, usage: {primary: {usedPercent, windowMinutes, resetsAt, resetDescription}, secondary: {...}}}]. Query providers individually; use --source cli for codex to avoid browser OAuth prompts."
   },
   "pystray": {
     "version": ">=0.19.5",

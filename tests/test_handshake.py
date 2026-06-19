@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from src.usage_pulse.analysis.advisor import ModelAdvisor
-from src.usage_pulse.handshake import STATE_FILE, read_state, write_state
-from src.usage_pulse.providers.base import RateWindow, UsageData
+from usage_pulse.analysis.advisor import ModelAdvisor
+from usage_pulse.handshake import STATE_FILE, read_state, write_state
+from usage_pulse.providers.base import RateWindow, UsageData
 
 
 @pytest.fixture(autouse=True)
@@ -44,7 +44,7 @@ def test_write_and_read_state():
 
 def test_state_has_required_keys():
     write_state(_make_data(), ModelAdvisor().recommend(_make_data()))
-    state = json.loads(STATE_FILE.read_text())
+    state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     assert "updated_at" in state
     assert "today" in state
     assert "rate_windows" in state

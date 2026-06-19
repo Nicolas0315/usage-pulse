@@ -53,6 +53,8 @@ else:
 
 ```bash
 usage-pulse summary     # 今日の使用量サマリー
+usage-pulse summary --json  # 機械可読サマリー
+usage-pulse doctor      # ローカル診断
 usage-pulse roi         # モデル別 ROI テーブル
 cat ~/.local/state/usage-pulse/current.json  # 生の状態データ
 ```

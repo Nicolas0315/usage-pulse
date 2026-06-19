@@ -19,6 +19,7 @@ def main():
         from usage_pulse.analysis.advisor import ModelAdvisor
         from usage_pulse.display.notify import Notifier
         from usage_pulse.handshake import write_state
+        from usage_pulse.io import write_text_atomic
         from usage_pulse.providers.ccusage import CcusageProvider
 
         provider = CcusageProvider()
@@ -43,8 +44,8 @@ def main():
         else:
             text = ""
 
-        cache_file.write_text(text)
-        cache_time_file.write_text(str(int(time.time())))
+        write_text_atomic(cache_file, text)
+        write_text_atomic(cache_time_file, str(int(time.time())))
     except Exception:
         pass
 
