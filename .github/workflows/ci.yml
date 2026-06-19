@@ -30,8 +30,8 @@ jobs:
       - run: uv sync --dev
       # Static security analysis
       - run: uv run bandit -r src/ -ll -x src/usage_pulse/display/tray.py
-      # Dependency vulnerability scan
-      - run: uv run pip-audit --requirement <(uv export --no-dev --format requirements-txt)
+      # Dependency vulnerability scan (scan installed env directly, avoids editable install issue)
+      - run: uv run pip-audit
 
   test:
     runs-on: ${{ matrix.os }}

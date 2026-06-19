@@ -35,7 +35,7 @@ def write_state(data: UsageData, rec: Recommendation) -> None:
             "urgency": rec.urgency,
         },
     }
-    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def read_state() -> dict | None:
@@ -43,7 +43,7 @@ def read_state() -> dict | None:
     if not STATE_FILE.exists():
         return None
     try:
-        state = json.loads(STATE_FILE.read_text())
+        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
         updated = datetime.fromisoformat(state["updated_at"])
         age = (datetime.now(UTC) - updated).total_seconds()
         if age > 300:  # 5 minutes
