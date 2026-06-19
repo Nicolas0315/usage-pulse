@@ -151,6 +151,38 @@ def summary(threshold):
 
 
 @main.command()
+def rates():
+    """Show real-time rate windows for all providers (via CodexBar)."""
+    cb = CodexbarProvider()
+    if not cb.available:
+        click.echo(
+            "CodexBar not available (macOS only). Install: brew install trycodeday/tap/codexbar"
+        )
+        return
+
+    windows = cb.fetch_rate_windows()
+    if not windows:
+        click.echo("No provider data returned.")
+        return
+
+    click.echo(f"\n{'=' * 55}")
+    click.echo("  Rate Windows  —  CodexBar")
+    click.echo(f"{'=' * 55}")
+    for prov, info in windows.items():
+        p_pct = info["primary_pct"]
+        s_pct = info["secondary_pct"]
+        reset = info.get("primary_reset_desc", "")
+        bar_len = int(p_pct / 5)  # 20-char bar
+        bar = "█" * bar_len + "░" * (20 - bar_len)
+        click.echo(
+            f"  {info['label']:2}  {prov:<12}  [{bar}] {p_pct:5.1f}%"
+            + (f"  weekly={s_pct:.1f}%" if s_pct > 0 else "")
+            + (f"  {reset}" if reset else "")
+        )
+    click.echo(f"{'=' * 55}\n")
+
+
+@main.command()
 def roi():
     """Show token ROI table by model."""
     provider = CcusageProvider()
