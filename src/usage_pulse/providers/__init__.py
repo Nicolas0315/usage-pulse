@@ -1,5 +1,6 @@
 """Data providers for usage-pulse."""
-from .base import UsageData, ModelBreakdown
+
+from .base import ModelBreakdown, UsageData
 from .ccusage import CcusageProvider
 from .codexbar import CodexbarProvider
 

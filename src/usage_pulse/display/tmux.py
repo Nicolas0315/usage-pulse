@@ -1,5 +1,7 @@
 """tmux status-right display."""
+
 import sys
+
 from ..providers.base import UsageData
 from ..providers.ccusage import CcusageProvider
 

@@ -1,10 +1,12 @@
 """Tests for agent handshake state file."""
+
 import json
+
 import pytest
-from pathlib import Path
-from src.usage_pulse.providers.base import UsageData, RateWindow
-from src.usage_pulse.analysis.advisor import ModelAdvisor, Recommendation
-from src.usage_pulse.handshake import write_state, read_state, STATE_FILE
+
+from src.usage_pulse.analysis.advisor import ModelAdvisor
+from src.usage_pulse.handshake import STATE_FILE, read_state, write_state
+from src.usage_pulse.providers.base import RateWindow, UsageData
 
 
 @pytest.fixture(autouse=True)

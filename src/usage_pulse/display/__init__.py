@@ -1,5 +1,6 @@
 """Display modules: tmux, tray, notify."""
-from .tmux import TmuxDisplay
+
 from .notify import Notifier
+from .tmux import TmuxDisplay
 
 __all__ = ["TmuxDisplay", "Notifier"]

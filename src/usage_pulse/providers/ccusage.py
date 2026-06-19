@@ -1,10 +1,11 @@
 """ccusage provider: fetches AI usage via `ccusage daily --json`."""
-import json
-import subprocess
-import shutil
-from datetime import datetime, timezone
-from .base import UsageData, ModelBreakdown
 
+import json
+import shutil
+import subprocess
+from datetime import UTC, datetime
+
+from .base import ModelBreakdown, UsageData
 
 # Short display names for known models
 MODEL_SHORT = {
@@ -67,7 +68,7 @@ class CcusageProvider:
         ]
 
         return UsageData(
-            date=today.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d")),
+            date=today.get("date", datetime.now(UTC).strftime("%Y-%m-%d")),
             cost_usd=float(today.get("cost", 0)),
             input_tokens=int(today.get("inputTokens", 0)),
             output_tokens=int(today.get("outputTokens", 0)),
@@ -75,7 +76,7 @@ class CcusageProvider:
             cache_creation_tokens=int(today.get("cacheCreationTokens", 0)),
             model_breakdowns=breakdowns,
             source="ccusage",
-            fetched_at=datetime.now(timezone.utc),
+            fetched_at=datetime.now(UTC),
         )
 
     def format_tmux(self, data: UsageData, cost_threshold: float = 50.0) -> str:

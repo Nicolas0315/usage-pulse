@@ -1,5 +1,7 @@
 """Model selection advisor based on current usage and rate-window state."""
+
 from dataclasses import dataclass
+
 from ..providers.base import UsageData
 
 
@@ -15,9 +17,9 @@ class ModelAdvisor:
 
     # Models ordered from heaviest to lightest
     TIERS = [
-        ("claude-opus-4-8",   "heavy reasoning, highest cost"),
+        ("claude-opus-4-8", "heavy reasoning, highest cost"),
         ("claude-sonnet-4-6", "balanced — default for complex tasks"),
-        ("claude-haiku-4-5",  "fast, cheap — routine/simple tasks"),
+        ("claude-haiku-4-5", "fast, cheap — routine/simple tasks"),
     ]
 
     def recommend(self, data: UsageData, cost_threshold: float = 50.0) -> Recommendation:
@@ -72,13 +74,13 @@ class ModelAdvisor:
         """Return a markdown block suitable for inclusion in a Claude Code Skill."""
         emoji = {"ok": "✅", "caution": "⚠️", "warning": "🟠", "critical": "🔴"}[rec.urgency]
         lines = [
-            f"## 現在の使用量",
+            "## 現在の使用量",
             f"- 今日のコスト: ${data.cost_usd:.2f}",
             f"- 今日のトークン: {data.total_tokens // 1000}K",
             f"- 5分レートウィンドウ: {data.primary_rate_pct:.0f}%",
             f"- 週次ウィンドウ: {data.weekly_rate_pct:.0f}%",
-            f"",
-            f"## 推奨モデル",
+            "",
+            "## 推奨モデル",
             f"{emoji} **{rec.model}** — {rec.reason}",
         ]
         return "\n".join(lines)

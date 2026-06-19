@@ -1,16 +1,15 @@
 """usage-pulse CLI entry point."""
-import json
+
 import os
 import sys
+
 import click
 
-from .providers.ccusage import CcusageProvider
-from .providers.codexbar import CodexbarProvider
 from .analysis.advisor import ModelAdvisor
 from .analysis.roi import compute_roi, format_roi_table
-from .display.tmux import TmuxDisplay
 from .display.notify import Notifier
-from .handshake import write_state, read_state, STATE_FILE
+from .handshake import STATE_FILE, write_state
+from .providers.ccusage import CcusageProvider
 
 
 @click.group()
@@ -21,8 +20,12 @@ def main():
 
 
 @main.command()
-@click.option("--threshold", default=50.0, envvar="USAGE_PULSE_THRESHOLD",
-              help="Daily cost threshold for color/alert (USD, default 50)")
+@click.option(
+    "--threshold",
+    default=50.0,
+    envvar="USAGE_PULSE_THRESHOLD",
+    help="Daily cost threshold for color/alert (USD, default 50)",
+)
 @click.option("--no-cache", is_flag=True, help="Skip cache, fetch fresh data")
 def statusline(threshold, no_cache):
     """Output tmux status-right string (cached, non-blocking)."""
@@ -47,9 +50,16 @@ def statusline(threshold, no_cache):
     if no_cache or (now - cached_time) >= ttl:
         # Refresh in background
         import subprocess
+
         subprocess.Popen(
-            [sys.executable, "-m", "usage_pulse._refresh_worker",
-             str(cache_file), str(cache_time_file), str(threshold)],
+            [
+                sys.executable,
+                "-m",
+                "usage_pulse._refresh_worker",
+                str(cache_file),
+                str(cache_time_file),
+                str(threshold),
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,
@@ -103,9 +113,9 @@ def summary(threshold):
     advisor = ModelAdvisor()
     rec = advisor.recommend(data, threshold)
 
-    click.echo(f"\n{'='*50}")
+    click.echo(f"\n{'=' * 50}")
     click.echo(f"  usage-pulse  —  {data.date}")
-    click.echo(f"{'='*50}")
+    click.echo(f"{'=' * 50}")
     click.echo(f"  Cost today:   ${data.cost_usd:.4f}")
     click.echo(f"  Tokens:       {data.total_tokens:,} ({data.total_tokens // 1000}K)")
     click.echo(f"  Input:        {data.input_tokens:,}")
@@ -116,7 +126,7 @@ def summary(threshold):
     urgency_emoji = {"ok": "✅", "caution": "⚠️", "warning": "🟠", "critical": "🔴"}
     click.echo(f"\n  Recommended:  {urgency_emoji.get(rec.urgency, '')} {rec.model}")
     click.echo(f"  Reason:       {rec.reason}")
-    click.echo(f"{'='*50}\n")
+    click.echo(f"{'=' * 50}\n")
 
 
 @main.command()
@@ -136,11 +146,16 @@ def roi():
 
 @main.command()
 @click.option("--cost-threshold", default=50.0, envvar="USAGE_PULSE_THRESHOLD")
-@click.option("--poll-interval", default=60, envvar="USAGE_PULSE_POLL_INTERVAL",
-              help="Seconds between updates (default 60)")
+@click.option(
+    "--poll-interval",
+    default=60,
+    envvar="USAGE_PULSE_POLL_INTERVAL",
+    help="Seconds between updates (default 60)",
+)
 def tray(cost_threshold, poll_interval):
     """Start cross-platform system tray daemon (Mac/Win/Linux)."""
     from .display.tray import run_tray
+
     run_tray(cost_threshold=cost_threshold, poll_interval=poll_interval)
 
 
@@ -154,6 +169,7 @@ def setup():
 
     # Check dependencies
     import shutil
+
     checks = {
         "tmux": shutil.which("tmux"),
         "bunx (ccusage)": shutil.which("bunx"),

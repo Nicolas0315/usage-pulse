@@ -1,7 +1,8 @@
 """Cross-platform OS desktop notifications."""
+
+import os
 import platform
 import subprocess
-import os
 
 
 def _os_type() -> str:
@@ -38,14 +39,19 @@ class Notifier:
             match self._os:
                 case "mac":
                     subprocess.run(
-                        ["osascript", "-e",
-                         f'display notification "{message}" with title "{title}"'],
-                        capture_output=True, timeout=5,
+                        [
+                            "osascript",
+                            "-e",
+                            f'display notification "{message}" with title "{title}"',
+                        ],
+                        capture_output=True,
+                        timeout=5,
                     )
                 case "linux":
                     subprocess.run(
                         ["notify-send", title, message],
-                        capture_output=True, timeout=5,
+                        capture_output=True,
+                        timeout=5,
                     )
                 case "wsl":
                     ps_cmd = (
@@ -61,7 +67,8 @@ class Notifier:
                     )
                     subprocess.run(
                         ["powershell.exe", "-NoProfile", "-Command", ps_cmd],
-                        capture_output=True, timeout=10,
+                        capture_output=True,
+                        timeout=10,
                     )
                 case "windows":
                     ps_cmd = (
@@ -74,7 +81,8 @@ class Notifier:
                     )
                     subprocess.run(
                         ["powershell.exe", "-NoProfile", "-Command", ps_cmd],
-                        capture_output=True, timeout=10,
+                        capture_output=True,
+                        timeout=10,
                     )
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             pass

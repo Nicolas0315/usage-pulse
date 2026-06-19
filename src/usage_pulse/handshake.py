@@ -1,12 +1,12 @@
 """Agent handshake: write usage state to a shared file for AI agents to read."""
+
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
+from .analysis.advisor import Recommendation
 from .providers.base import UsageData
-from .analysis.advisor import ModelAdvisor, Recommendation
-
 
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "usage-pulse"
 STATE_FILE = STATE_DIR / "current.json"
@@ -17,7 +17,7 @@ def write_state(data: UsageData, rec: Recommendation) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
 
     state = {
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
         "today": {
             "cost_usd": round(data.cost_usd, 4),
             "tokens": data.total_tokens,
@@ -45,7 +45,7 @@ def read_state() -> dict | None:
     try:
         state = json.loads(STATE_FILE.read_text())
         updated = datetime.fromisoformat(state["updated_at"])
-        age = (datetime.now(timezone.utc) - updated).total_seconds()
+        age = (datetime.now(UTC) - updated).total_seconds()
         if age > 300:  # 5 minutes
             return None
         return state

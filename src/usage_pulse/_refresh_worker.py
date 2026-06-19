@@ -2,6 +2,7 @@
 
 Spawned by `usage-pulse statusline` as a detached process so tmux never blocks.
 """
+
 import sys
 import time
 from pathlib import Path
@@ -15,10 +16,10 @@ def main():
     threshold = float(sys.argv[3])
 
     try:
-        from usage_pulse.providers.ccusage import CcusageProvider
         from usage_pulse.analysis.advisor import ModelAdvisor
         from usage_pulse.display.notify import Notifier
         from usage_pulse.handshake import write_state
+        from usage_pulse.providers.ccusage import CcusageProvider
 
         provider = CcusageProvider()
         data = provider.fetch_today()

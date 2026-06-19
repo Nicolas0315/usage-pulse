@@ -1,22 +1,23 @@
 """Token ROI calculation per model."""
-from dataclasses import dataclass
-from ..providers.base import ModelBreakdown
 
+from dataclasses import dataclass
+
+from ..providers.base import ModelBreakdown
 
 # Known list prices (USD per 1M tokens) as of 2026-06
 # Update via: scripts/check-provider-updates.sh
 MODEL_PRICES = {
-    "claude-opus-4-8":     {"input": 15.0,  "output": 75.0,  "cache_read": 1.5},
-    "claude-sonnet-4-6":   {"input": 3.0,   "output": 15.0,  "cache_read": 0.3},
-    "claude-haiku-4-5":    {"input": 0.8,   "output": 4.0,   "cache_read": 0.08},
-    "claude-fable-5":      {"input": 3.0,   "output": 15.0,  "cache_read": 0.3},
-    "gpt-5.5":             {"input": 2.0,   "output": 8.0,   "cache_read": 1.0},
-    "gpt-4o":              {"input": 2.5,   "output": 10.0,  "cache_read": 1.25},
-    "gpt-4o-mini":         {"input": 0.15,  "output": 0.6,   "cache_read": 0.075},
-    "o3":                  {"input": 10.0,  "output": 40.0,  "cache_read": 2.5},
-    "o4-mini":             {"input": 1.1,   "output": 4.4,   "cache_read": 0.275},
-    "gemini-2.5-pro":      {"input": 1.25,  "output": 10.0,  "cache_read": 0.31},
-    "gemini-2.0-flash":    {"input": 0.075, "output": 0.3,   "cache_read": 0.019},
+    "claude-opus-4-8": {"input": 15.0, "output": 75.0, "cache_read": 1.5},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0, "cache_read": 0.3},
+    "claude-haiku-4-5": {"input": 0.8, "output": 4.0, "cache_read": 0.08},
+    "claude-fable-5": {"input": 3.0, "output": 15.0, "cache_read": 0.3},
+    "gpt-5.5": {"input": 2.0, "output": 8.0, "cache_read": 1.0},
+    "gpt-4o": {"input": 2.5, "output": 10.0, "cache_read": 1.25},
+    "gpt-4o-mini": {"input": 0.15, "output": 0.6, "cache_read": 0.075},
+    "o3": {"input": 10.0, "output": 40.0, "cache_read": 2.5},
+    "o4-mini": {"input": 1.1, "output": 4.4, "cache_read": 0.275},
+    "gemini-2.5-pro": {"input": 1.25, "output": 10.0, "cache_read": 0.31},
+    "gemini-2.0-flash": {"input": 0.075, "output": 0.3, "cache_read": 0.019},
 }
 
 
@@ -25,9 +26,9 @@ class ModelROI:
     model_name: str
     cost_usd: float
     output_tokens: int
-    cache_efficiency: float       # cache_read / (input + cache_read)
-    cost_per_1k_output: float     # USD per 1K output tokens
-    effective_cost_ratio: float   # actual_cost / theoretical_max_cost (lower = better)
+    cache_efficiency: float  # cache_read / (input + cache_read)
+    cost_per_1k_output: float  # USD per 1K output tokens
+    effective_cost_ratio: float  # actual_cost / theoretical_max_cost (lower = better)
     sessions: int = 0
 
 
@@ -42,22 +43,23 @@ def compute_roi(breakdowns: list[ModelBreakdown]) -> list[ModelROI]:
 
         # Effective cost ratio: actual cost vs cost if no caching
         if prices and m.input_tokens > 0:
-            theoretical = (
-                (m.input_tokens + m.cache_read_tokens) / 1_000_000 * prices["input"]
-                + m.output_tokens / 1_000_000 * prices["output"]
-            )
+            theoretical = (m.input_tokens + m.cache_read_tokens) / 1_000_000 * prices[
+                "input"
+            ] + m.output_tokens / 1_000_000 * prices["output"]
             ratio = m.cost_usd / theoretical if theoretical > 0 else 1.0
         else:
             ratio = 1.0
 
-        results.append(ModelROI(
-            model_name=m.model_name,
-            cost_usd=m.cost_usd,
-            output_tokens=m.output_tokens,
-            cache_efficiency=m.cache_efficiency,
-            cost_per_1k_output=m.cost_per_1k_output,
-            effective_cost_ratio=ratio,
-        ))
+        results.append(
+            ModelROI(
+                model_name=m.model_name,
+                cost_usd=m.cost_usd,
+                output_tokens=m.output_tokens,
+                cache_efficiency=m.cache_efficiency,
+                cost_per_1k_output=m.cost_per_1k_output,
+                effective_cost_ratio=ratio,
+            )
+        )
 
     return sorted(results, key=lambda r: r.cost_usd, reverse=True)
 

@@ -1,7 +1,7 @@
 """Tests for model advisor."""
-import pytest
-from src.usage_pulse.providers.base import UsageData, RateWindow
+
 from src.usage_pulse.analysis.advisor import ModelAdvisor
+from src.usage_pulse.providers.base import RateWindow, UsageData
 
 
 def _make_data(cost=0.0, primary_pct=0.0, weekly_pct=0.0) -> UsageData:

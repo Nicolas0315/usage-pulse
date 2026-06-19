@@ -1,9 +1,10 @@
 """CodexBar provider: reads rate-window data on macOS (TTY required)."""
+
 import json
-import subprocess
 import shutil
-from datetime import datetime, timezone
-from .base import UsageData, RateWindow
+import subprocess
+
+from .base import RateWindow, UsageData
 
 
 class CodexbarProvider:
@@ -29,7 +30,7 @@ class CodexbarProvider:
 
     def __init__(self, timeout: int = 15):
         self.timeout = timeout
-        self._binary = shutil.which("codexbar")
+        self._binary: str = shutil.which("codexbar") or "codexbar"
 
     @property
     def available(self) -> bool:
@@ -42,6 +43,7 @@ class CodexbarProvider:
         try:
             # Use script(1) to allocate a pseudo-TTY, avoiding the hang-without-TTY issue
             import platform
+
             if platform.system() == "Darwin":
                 result = subprocess.run(
                     ["script", "-q", "/dev/null", self._binary, "usage", "--json"],

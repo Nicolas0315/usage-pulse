@@ -1,7 +1,7 @@
 """Shared data models for usage providers."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -36,8 +36,8 @@ class ModelBreakdown:
 class RateWindow:
     window_minutes: int
     used_percent: float
-    resets_at: Optional[str] = None
-    reset_description: Optional[str] = None
+    resets_at: str | None = None
+    reset_description: str | None = None
 
 
 @dataclass
@@ -51,7 +51,7 @@ class UsageData:
     model_breakdowns: list[ModelBreakdown] = field(default_factory=list)
     rate_windows: dict[str, RateWindow] = field(default_factory=dict)
     source: str = "unknown"
-    fetched_at: Optional[datetime] = None
+    fetched_at: datetime | None = None
 
     @property
     def total_tokens(self) -> int:

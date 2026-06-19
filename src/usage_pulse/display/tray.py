@@ -1,26 +1,29 @@
 """Cross-platform system tray using pystray (Win/Linux) or rumps (Mac)."""
+
 import platform
 import threading
 import time
-from ..providers.ccusage import CcusageProvider
-from ..providers.codexbar import CodexbarProvider
+
 from ..analysis.advisor import ModelAdvisor
 from ..analysis.roi import compute_roi, format_roi_table
 from ..handshake import write_state
+from ..providers.ccusage import CcusageProvider
+from ..providers.codexbar import CodexbarProvider
 from .notify import Notifier
 
 
 def _create_icon_image(color: str = "green"):
     """Create a minimal colored dot image for the tray icon."""
     from PIL import Image, ImageDraw
+
     size = 64
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     colors = {
-        "green":  (80, 200, 80, 255),
+        "green": (80, 200, 80, 255),
         "yellow": (240, 200, 60, 255),
-        "red":    (220, 60, 60, 255),
-        "gray":   (160, 160, 160, 255),
+        "red": (220, 60, 60, 255),
+        "gray": (160, 160, 160, 255),
     }
     c = colors.get(color, colors["gray"])
     draw.ellipse([4, 4, size - 4, size - 4], fill=c)
@@ -91,7 +94,6 @@ class TrayApp:
         def show_summary(icon, item):
             if self._data:
                 rec = self._advisor.recommend(self._data, self.threshold)
-                rois = compute_roi(self._data.model_breakdowns)
                 msg = (
                     f"Today: ${self._data.cost_usd:.2f} / {self._data.total_tokens // 1000}K tokens\n"
                     f"Recommended: {rec.model}\n{rec.reason}"

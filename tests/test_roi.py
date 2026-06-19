@@ -1,7 +1,7 @@
 """Tests for ROI calculation."""
-import pytest
-from src.usage_pulse.providers.base import ModelBreakdown
+
 from src.usage_pulse.analysis.roi import compute_roi, format_roi_table
+from src.usage_pulse.providers.base import ModelBreakdown
 
 
 def test_compute_roi_basic():
