@@ -18,6 +18,7 @@ tmux ステータスライン・OS ネイティブシステムトレイ・通知
 | codexbar 連携 | ✅ (TTY あり) | ❌ | ❌ |
 | Claude Code フック | ✅ | ✅ | ✅ |
 | モデル選択 Skill | ✅ | ✅ | ✅ |
+| AI runtime/config 監査 | ✅ | ✅ | ✅ |
 
 ---
 
@@ -85,6 +86,14 @@ usage-pulse setup
 # ローカル診断（依存 CLI / provider / state / cache）
 usage-pulse doctor
 usage-pulse doctor --json
+
+# AI CLI の実行プロセス・安全な設定要約・トークン効率を監査
+usage-pulse audit
+usage-pulse audit --json
+usage-pulse audit --json --skip-live
+
+# SSH 接続先で audit JSON を集約
+usage-pulse fleet-audit --host home-mac-main --host nicolas2025 --json
 ```
 
 ---
@@ -111,6 +120,7 @@ usage-pulse
 ├── providers/          データ取得層
 │   ├── ccusage.py      ccusage daily --json (全 OS 共通)
 │   └── codexbar.py     codexbar usage --json (Mac TTY あり時のみ)
+├── audit.py            AI CLI / 設定 / プロセス / tmux / 使用量監査
 ├── display/            表示層
 │   ├── tmux.py         tmux status-right 文字列
 │   ├── tray.py         pystray システムトレイ (Win/Linux)
@@ -127,6 +137,8 @@ usage-pulse
 - ccusage は実スキーマ (`period` / `totalCost` / `totalTokens`) を検証して今日または最新日の行を選択
 - CodexBar rate window は provider 別に並列取得し、遅い provider は短い timeout で切り離し
 - 共有状態ファイルと tmux キャッシュは原子的に置換し、読者側に部分書き込みを見せない
+- `audit` は設定ファイルの秘密値を出さず、モデル名・sandbox/approval・hook有無など安全なホワイトリストだけを要約
+- `audit` は `ccusage` 由来のモデル別 cost/output/cache 効率、AI 関連プロセス、tmux ペイン数、load average からボトルネック候補を JSON 化
 
 CodexBar の timeout は `USAGE_PULSE_CODEXBAR_TIMEOUT` で調整できます（既定: 4 秒）。
 
