@@ -313,8 +313,7 @@ def audit(json_output, skip_live, no_processes):
     available = [tool["name"] for tool in payload["tools"] if tool["available"]]
     click.echo(f"  tools: {', '.join(available) if available else 'none'}")
     click.echo(
-        f"  tmux: {payload['tmux']['status']} "
-        f"ai_panes={payload['tmux'].get('ai_pane_count', 0)}"
+        f"  tmux: {payload['tmux']['status']} ai_panes={payload['tmux'].get('ai_pane_count', 0)}"
     )
     if payload["bottlenecks"]:
         click.echo("  bottlenecks:")

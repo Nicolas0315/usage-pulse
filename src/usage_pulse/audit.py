@@ -75,7 +75,10 @@ TOOL_SPECS = (
         "cursor-agent",
         "cursor-agent",
         ("--version",),
-        ("~/.cursor/mcp.json", ".cursor/rules",),
+        (
+            "~/.cursor/mcp.json",
+            ".cursor/rules",
+        ),
         ("AGENTS.md", ".cursor/rules"),
     ),
     ToolSpec(
@@ -315,7 +318,12 @@ def collect_tmux() -> dict[str, Any]:
         return {"status": "unavailable", "error": result.stderr.strip()[:240], "items": []}
     items = [line for line in result.stdout.splitlines() if line.strip()]
     ai_items = [line for line in items if AI_PROCESS_RE.search(line)]
-    return {"status": "ok", "pane_count": len(items), "ai_pane_count": len(ai_items), "items": ai_items[:80]}
+    return {
+        "status": "ok",
+        "pane_count": len(items),
+        "ai_pane_count": len(ai_items),
+        "items": ai_items[:80],
+    }
 
 
 def collect_usage(skip_live: bool = False) -> dict[str, Any]:
@@ -425,7 +433,9 @@ def analyze_bottlenecks(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return findings
 
 
-def collect_audit(skip_live: bool = False, include_processes: bool = True, cwd: Path | None = None) -> dict[str, Any]:
+def collect_audit(
+    skip_live: bool = False, include_processes: bool = True, cwd: Path | None = None
+) -> dict[str, Any]:
     cwd = cwd or Path.cwd()
     payload: dict[str, Any] = {
         "schema_version": 1,
