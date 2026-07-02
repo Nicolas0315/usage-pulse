@@ -37,7 +37,15 @@ tmux ステータスライン・OS ネイティブシステムトレイ・通知
 ```bash
 git clone https://github.com/<your-org>/usage-pulse ~/work/usage-pulse
 cd ~/work/usage-pulse
-uv sync
+uv sync --dev --frozen
+```
+
+### 検証
+
+CI と同じ検証はリポジトリルートで実行します。
+
+```bash
+bash scripts/verify.sh ci
 ```
 
 ### tmux ステータスライン

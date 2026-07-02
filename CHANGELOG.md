@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Repo-local `scripts/verify.sh` for reproducible uv-backed lint, typecheck, security, test, and provider-pin checks.
+- `.python-version` to align local and CI Python selection.
+
 ## [0.1.0] - 2026-06-19
 
 ### Added
